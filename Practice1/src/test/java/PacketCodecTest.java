@@ -70,7 +70,7 @@ class PacketCodecTest {
     void shouldThrowExceptionForWrongMessageCrc() throws Exception {
         byte[] encoded = PacketCodec.encode(packet, key);
         int wLen = ByteBuffer.wrap(encoded).getInt(PacketStructure.OFFSET_W_LEN);
-        int msgCrcOffset = PacketStructure.HEADER_SIZE + wLen - PacketStructure.LEN_CRC16;
+        int msgCrcOffset = PacketStructure.OFFSET_MSG + wLen;
         encoded[msgCrcOffset] ^= (byte) 0xFF;
         assertThrows(IllegalArgumentException.class, () -> PacketCodec.decode(encoded, key));
     }

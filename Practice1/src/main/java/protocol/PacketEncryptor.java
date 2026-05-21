@@ -1,3 +1,10 @@
+package protocol;
+
+import model.Message;
+import model.Packet;
+import utils.AesUtil;
+import utils.Crc16;
+
 import java.nio.ByteBuffer;
 
 public class PacketEncryptor implements Encryptor {
@@ -10,7 +17,7 @@ public class PacketEncryptor implements Encryptor {
 
     public byte[] encrypt(Packet packet) throws Exception {
         if (packet == null) {
-            throw new IllegalArgumentException("Packet cannot be null");
+            throw new IllegalArgumentException("model.Packet cannot be null");
         }
 
         byte[] encryptedPayload = AesUtil.encrypt(packet.getbMsq().getMessage(), key);

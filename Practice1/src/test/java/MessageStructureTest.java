@@ -1,4 +1,5 @@
 import org.junit.jupiter.api.Test;
+import protocol.MessageStructure;
 
 import static org.junit.jupiter.api.Assertions.*;
 

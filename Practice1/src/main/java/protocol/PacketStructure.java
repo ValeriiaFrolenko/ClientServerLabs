@@ -1,23 +1,25 @@
+package protocol;
+
 public final class PacketStructure {
 
     /**
-     * Packet Structure:
+     * model.Packet Structure:
      * - Magic Byte (1 byte)
      * - Source (1 byte)
-     * - Packet ID (8 bytes)
+     * - model.Packet ID (8 bytes)
      * - Payload Length (4 bytes)
      * - Header CRC16 (2 bytes)
-     * - Message (variable length)
-     * - Message CRC16 (2 bytes)
-     * Packet Offsets:
+     * - model.Message (variable length)
+     * - model.Message CRC16 (2 bytes)
+     * model.Packet Offsets:
      * - Magic Byte: Offset 0
      * - Source: Offset 1
-     * - Packet ID: Offset 2
+     * - model.Packet ID: Offset 2
      * - Payload Length: Offset 10
      * - Header CRC16: Offset 14
-     * - Message: Offset 16
-     * Header Size: 14 bytes (Magic Byte + Source + Packet ID + Payload Length)
-     * Minimum Packet Size: 18 bytes (Header  + Header CRC16 + Message CRC16 with empty payload)
+     * - model.Message: Offset 16
+     * Header Size: 14 bytes (Magic Byte + Source + model.Packet ID + Payload Length)
+     * Minimum model.Packet Size: 18 bytes (Header  + Header CRC16 + model.Message CRC16 with empty payload)
      */
 
     private PacketStructure() {}

@@ -1,15 +1,17 @@
+package protocol;
+
 public final class MessageStructure {
 
     /**
-     * Message Structure:
+     * model.Message Structure:
      * - Command Type (4 bytes)
      * - User ID (4 bytes)
      * - Payload (variable length)
-     * Message Offsets:
+     * model.Message Offsets:
      * - Command Type: Offset 0
      * - User ID: Offset 4
      * - Payload: Offset 8
-     * Message Header Size: 8 bytes (Command Type + User ID)
+     * model.Message Header Size: 8 bytes (Command Type + User ID)
      */
 
     private MessageStructure() {}

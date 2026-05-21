@@ -1,3 +1,10 @@
+package protocol;
+
+import model.Message;
+import model.Packet;
+import utils.AesUtil;
+import utils.Crc16;
+
 import java.nio.ByteBuffer;
 
 public class PacketDecryptor implements Decryptor {
@@ -42,7 +49,7 @@ public class PacketDecryptor implements Decryptor {
 
     private void validateLength(byte[] data, int wLen) {
         if (data.length < PacketStructure.MIN_PACKET_SIZE + wLen) {
-            throw new IllegalArgumentException("Packet too short");
+            throw new IllegalArgumentException("model.Packet too short");
         }
     }
 
@@ -62,7 +69,7 @@ public class PacketDecryptor implements Decryptor {
     private void validateMessageCrc(ByteBuffer buffer, byte[] data, int wLen) {
         short messageCrc = buffer.getShort();
         if (messageCrc != Crc16.calculateCrc(data, PacketStructure.OFFSET_MSG, wLen)) {
-            throw new IllegalArgumentException("Message CRC mismatch");
+            throw new IllegalArgumentException("model.Message CRC mismatch");
         }
     }
 }

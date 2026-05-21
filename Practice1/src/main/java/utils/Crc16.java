@@ -1,3 +1,5 @@
+package utils;
+
 /**
  * Source <a href="https://introcs.cs.princeton.edu/java/61data/CRC16.java">CRC16</a>
  */

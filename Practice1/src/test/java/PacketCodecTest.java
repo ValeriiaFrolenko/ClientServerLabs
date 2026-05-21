@@ -1,6 +1,10 @@
+import model.Message;
+import model.Packet;
 import org.junit.jupiter.api.Test;
-
-import java.util.Scanner;
+import protocol.Decryptor;
+import protocol.Encryptor;
+import protocol.PacketDecryptor;
+import protocol.PacketEncryptor;
 
 import static org.junit.jupiter.api.Assertions.*;
 

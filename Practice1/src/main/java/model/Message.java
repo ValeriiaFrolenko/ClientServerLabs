@@ -1,3 +1,5 @@
+package model;
+
 public class Message{
     private int cType;
     private int bUserId;

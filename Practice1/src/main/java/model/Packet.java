@@ -1,3 +1,5 @@
+package model;
+
 public class Packet {
     private byte bSrc;
     private long bPktId;

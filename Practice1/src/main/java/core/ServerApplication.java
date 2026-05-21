@@ -39,9 +39,7 @@ public class ServerApplication {
         ProcessorImp processor = new ProcessorImp(wareHouse, encryptorConsumer);
         Consumer<Packet> processorConsumer = packet -> processorPool.submit(() -> processor.process(packet));
 
-        PacketDecryptor packetDecryptor = new PacketDecryptor(key);
-        DecryptorImp decryptor = new DecryptorImp(packetDecryptor, processorConsumer);
-        Consumer<byte[]> decryptorConsumer = data -> decryptorPool.submit(() -> decryptor.decrypt(data));
+        Consumer<byte[]> decryptorConsumer = createDecryptorConsumer(key, processorConsumer);
 
         FakeReceiver receiver1 = new FakeReceiver(decryptorConsumer);
         FakeReceiver receiver2 = new FakeReceiver(decryptorConsumer);
@@ -50,20 +48,35 @@ public class ServerApplication {
         receiverPool.submit(receiver2);
     }
 
-    public void stop() {
+    private Consumer<byte[]> createDecryptorConsumer(byte[] key, Consumer<Packet> processorConsumer) {
+        PacketDecryptor packetDecryptor = new PacketDecryptor(key);
+        DecryptorImp decryptor = new DecryptorImp(packetDecryptor, processorConsumer);
+        return data -> decryptorPool.submit(() -> {
+            try {
+                decryptor.decrypt(data);
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+        });
+    }
+
+    public boolean stop() {
         receiverPool.shutdownNow();
         decryptorPool.shutdownNow();
         processorPool.shutdownNow();
         encryptorPool.shutdownNow();
         senderPool.shutdownNow();
         try {
-            receiverPool.awaitTermination(2, TimeUnit.SECONDS);
-            decryptorPool.awaitTermination(2, TimeUnit.SECONDS);
-            processorPool.awaitTermination(2, TimeUnit.SECONDS);
-            encryptorPool.awaitTermination(2, TimeUnit.SECONDS);
-            senderPool.awaitTermination(2, TimeUnit.SECONDS);
+            boolean receiversStopped = receiverPool.awaitTermination(2, TimeUnit.SECONDS);
+            boolean decryptorsStopped = decryptorPool.awaitTermination(2, TimeUnit.SECONDS);
+            boolean processorsStopped = processorPool.awaitTermination(2, TimeUnit.SECONDS);
+            boolean encryptorsStopped = encryptorPool.awaitTermination(2, TimeUnit.SECONDS);
+            boolean sendersStopped = senderPool.awaitTermination(2, TimeUnit.SECONDS);
+
+            return receiversStopped && decryptorsStopped && processorsStopped && encryptorsStopped && sendersStopped;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            return false;
         }
     }
 }

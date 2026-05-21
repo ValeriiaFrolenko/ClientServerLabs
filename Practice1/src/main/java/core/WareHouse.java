@@ -26,7 +26,7 @@ public class WareHouse {
     }
 
     public void addStock(String name, int quantity) {
-        products.compute(name, (key, product) -> {
+        products.compute(name, (_, product) -> {
             if (product == null) {
                 throw new NoSuchElementException("Product not found: " + name);
             }
@@ -36,7 +36,7 @@ public class WareHouse {
     }
 
     public void removeStock(String name, int quantity) {
-        products.compute(name, (key, product) -> {
+        products.compute(name, (_, product) -> {
             if (product == null) {
                 throw new NoSuchElementException("Product not found: " + name);
             }
@@ -64,7 +64,7 @@ public class WareHouse {
     }
 
     public void updatePrice(String productName, double price) {
-        products.compute(productName, (key, product) -> {
+        products.compute(productName, (_, product) -> {
             if (product == null) {
                 throw new NoSuchElementException("Product not found: " + productName);
             }

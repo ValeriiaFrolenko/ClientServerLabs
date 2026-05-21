@@ -24,7 +24,7 @@ class PacketDecryptorTest {
     }
 
     @Test
-    void shouldThrowExceptionForWrongMagicByte() throws Exception {
+    void shouldThrowExceptionForWrongMagicByte(){
         byte[] encoded = this.encoded;
         byte wrongByte = 0x00;
         encoded[0] = wrongByte;
@@ -32,7 +32,7 @@ class PacketDecryptorTest {
     }
 
     @Test
-    void shouldThrowExceptionForWrongLength() throws Exception {
+    void shouldThrowExceptionForWrongLength() {
         byte[] encoded = this.encoded;
         int wrongLength = 9999;
         ByteBuffer.wrap(encoded).position(10).putInt(wrongLength);
@@ -40,14 +40,14 @@ class PacketDecryptorTest {
     }
 
     @Test
-    void shouldThrowExceptionForWrongHeaderCrc() throws Exception {
+    void shouldThrowExceptionForWrongHeaderCrc() {
         byte[] encoded = this.encoded;
         encoded[PacketStructure.OFFSET_HDR_CRC16] ^= (byte) 0xFF;
         assertThrows(IllegalArgumentException.class, () -> SUT.decrypt(encoded));
     }
 
     @Test
-    void shouldThrowExceptionForWrongMessageCrc() throws Exception {
+    void shouldThrowExceptionForWrongMessageCrc() {
         byte[] encoded = this.encoded;
         int wLen = ByteBuffer.wrap(encoded).getInt(PacketStructure.OFFSET_W_LEN);
         int msgCrcOffset = PacketStructure.OFFSET_MSG + wLen;

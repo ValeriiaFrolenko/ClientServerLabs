@@ -12,8 +12,8 @@ class PacketCodecTest {
 
     Packet packet = createPacket();
     byte[] key = "1234567890abcdef".getBytes();
-    private final Decryptor SUTDecr = new PacketDecryptor(key);
-    private final Encryptor SUTEncr = new PacketEncryptor(key);
+    private final PacketDecryptor SUTDecr = new PacketDecryptor(key);
+    private final PacketEncryptor SUTEncr = new PacketEncryptor(key);
 
 
     private Packet createPacket() {

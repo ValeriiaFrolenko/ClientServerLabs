@@ -5,8 +5,6 @@ public class Message{
     private int bUserId;
     private String message;
 
-    public Message() {}
-
     public Message(int cType, int bUserId, String message) {
         this.cType = cType;
         this.bUserId = bUserId;

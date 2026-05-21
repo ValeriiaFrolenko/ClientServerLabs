@@ -1,0 +1,27 @@
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class PacketEncryptorTest {
+
+    private final Packet packet = createPacket();
+    private final byte[] key = "1234567890abcdef".getBytes();
+    private final Encryptor SUT = new PacketEncryptor(key);
+
+    private Packet createPacket() {
+        Message message = new Message(1, 42, "Hello, World!");
+        return new Packet((byte) 0x01, 123456789L, message);
+    }
+
+    @Test
+    void shouldThrowExceptionForNullPacketEncode() {
+        assertThrows(IllegalArgumentException.class, () -> SUT.encrypt(null));
+    }
+
+    @Test
+    void shouldProduceSameEncodedBytesForSamePacket() throws Exception {
+        byte[] encoded1 = SUT.encrypt(packet);
+        byte[] encoded2 = SUT.encrypt(packet);
+        assertArrayEquals(encoded1, encoded2);
+    }
+}

@@ -7,7 +7,7 @@ import utils.Crc16;
 
 import java.nio.ByteBuffer;
 
-public class PacketDecryptor implements Decryptor {
+public class PacketDecryptor{
 
     private final byte[] key;
 

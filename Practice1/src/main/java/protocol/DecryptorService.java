@@ -4,20 +4,20 @@ import model.Packet;
 
 import java.util.function.Consumer;
 
-public class DecryptorImp implements Decryptor {
+public class DecryptorService implements Decryptor {
 
-    private final PacketDecryptor packetDecryptor;
+    private final PacketDecoder packetDecoder;
     private final Consumer<Packet> onMessageReceived;
 
-    public DecryptorImp(PacketDecryptor packetDecryptor, Consumer<Packet> onMessageReceived) {
-        this.packetDecryptor = packetDecryptor;
+    public DecryptorService(PacketDecoder packetDecoder, Consumer<Packet> onMessageReceived) {
+        this.packetDecoder = packetDecoder;
         this.onMessageReceived = onMessageReceived;
     }
 
     @Override
     public void decrypt(byte[] encryptedPacket) {
         try {
-            Packet packet = packetDecryptor.decrypt(encryptedPacket);
+            Packet packet = packetDecoder.decrypt(encryptedPacket);
             onMessageReceived.accept(packet);
         } catch (Exception e) {
             throw new RuntimeException("Failed to decrypt packet", e);

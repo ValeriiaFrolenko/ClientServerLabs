@@ -7,11 +7,11 @@ import utils.Crc16;
 
 import java.nio.ByteBuffer;
 
-public class PacketDecryptor{
+public class PacketDecoder {
 
     private final byte[] key;
 
-    public PacketDecryptor(byte[] key) {
+    public PacketDecoder(byte[] key) {
         this.key = key;
     }
 

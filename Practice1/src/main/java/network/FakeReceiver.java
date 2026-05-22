@@ -3,7 +3,7 @@ package network;
 import model.Message;
 import model.Packet;
 import protocol.Encryptor;
-import protocol.PacketEncryptor;
+import protocol.PacketEncoder;
 
 import java.util.function.Consumer;
 
@@ -11,7 +11,7 @@ public class FakeReceiver implements Receiver, Runnable {
 
     private final Consumer<byte[]> onMessageReceived;
     private final byte[] key = "1234567890123456".getBytes();
-    private final Encryptor encryptor = new PacketEncryptor(key);
+    private final Encryptor encryptor = new PacketEncoder(key);
 
     public FakeReceiver(Consumer<byte[]> onMessageReceived) {
         this.onMessageReceived = onMessageReceived;

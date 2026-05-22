@@ -1,16 +1,16 @@
+package protocol;
+
 import model.Message;
 import model.Packet;
 import org.junit.jupiter.api.Test;
-import protocol.Encryptor;
-import protocol.PacketEncryptor;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class PacketEncryptorTest {
+class PacketEncoderTest {
 
     private final Packet packet = createPacket();
     private final byte[] key = "1234567890abcdef".getBytes();
-    private final Encryptor SUT = new PacketEncryptor(key);
+    private final Encryptor SUT = new PacketEncoder(key);
 
     private Packet createPacket() {
         Message message = new Message(1, 42, "Hello, World!");

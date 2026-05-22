@@ -4,10 +4,10 @@ import model.Product;
 import network.FakeReceiver;
 import network.FakeSender;
 import network.Sender;
-import protocol.DecryptorImp;
-import protocol.EncryptorImp;
-import protocol.PacketDecryptor;
-import protocol.PacketEncryptor;
+import protocol.DecryptorService;
+import protocol.EncryptorService;
+import protocol.PacketDecoder;
+import protocol.PacketEncoder;
 import model.Packet;
 
 import java.util.concurrent.ExecutorService;
@@ -32,14 +32,16 @@ public class ServerApplication {
         Sender sender = new FakeSender();
         Consumer<byte[]> senderConsumer = data -> senderPool.submit(() -> sender.sendMessage(data));
 
-        PacketEncryptor packetEncryptor = new PacketEncryptor(key);
-        EncryptorImp encryptorImp = new EncryptorImp(packetEncryptor, senderConsumer);
-        Consumer<Packet> encryptorConsumer = packet -> encryptorPool.submit(() -> encryptorImp.encryptMessage(packet));
+        PacketEncoder packetEncoder = new PacketEncoder(key);
+        EncryptorService encryptorService = new EncryptorService(packetEncoder, senderConsumer);
+        Consumer<Packet> encryptorConsumer = packet -> encryptorPool.submit(() -> encryptorService.encryptMessage(packet));
 
-        ProcessorImp processor = new ProcessorImp(wareHouse, encryptorConsumer);
+        ProcessorService processor = new ProcessorService(wareHouse, encryptorConsumer);
         Consumer<Packet> processorConsumer = packet -> processorPool.submit(() -> processor.process(packet));
 
-        Consumer<byte[]> decryptorConsumer = createDecryptorConsumer(key, processorConsumer);
+        PacketDecoder packetDecoder = new PacketDecoder(key);
+        DecryptorService decryptorService = new DecryptorService(packetDecoder, processorConsumer);
+        Consumer<byte[]> decryptorConsumer = data -> decryptorPool.submit(() -> decryptorService.decrypt(data));
 
         FakeReceiver receiver1 = new FakeReceiver(decryptorConsumer);
         FakeReceiver receiver2 = new FakeReceiver(decryptorConsumer);
@@ -48,17 +50,6 @@ public class ServerApplication {
         receiverPool.submit(receiver2);
     }
 
-    private Consumer<byte[]> createDecryptorConsumer(byte[] key, Consumer<Packet> processorConsumer) {
-        PacketDecryptor packetDecryptor = new PacketDecryptor(key);
-        DecryptorImp decryptor = new DecryptorImp(packetDecryptor, processorConsumer);
-        return data -> decryptorPool.submit(() -> {
-            try {
-                decryptor.decrypt(data);
-            } catch (Exception e) {
-                System.out.println(e.getMessage());
-            }
-        });
-    }
 
     public boolean stop() {
         receiverPool.shutdownNow();

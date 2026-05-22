@@ -1,16 +1,16 @@
+package protocol;
+
 import org.junit.jupiter.api.Test;
-import protocol.PacketDecryptor;
-import protocol.PacketStructure;
 
 import java.nio.ByteBuffer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class PacketDecryptorTest {
+class PacketDecoderTest {
 
     private final byte[] key = "1234567890abcdef".getBytes();
     private final byte[] encoded = new byte[] {19, 1, 0, 0, 0, 0, 7, 91, -51, 21, 0, 0, 0, 24, -91, -90, 0, 0, 0, 1, 0, 0, 0, 42, -91, -40, 45, -38, -123, -9, 73, -43, -14, -126, -102, 25, 18, 5, -92, -115, 100, -94};
-    private final PacketDecryptor SUT = new PacketDecryptor(key);
+    private final PacketDecoder SUT = new PacketDecoder(key);
 
     @Test
     void shouldThrowExceptionForNullPacketDecode() {

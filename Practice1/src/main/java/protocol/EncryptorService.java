@@ -3,12 +3,12 @@ package protocol;
 import model.Packet;
 import java.util.function.Consumer;
 
-public class EncryptorImp {
+public class EncryptorService {
 
     private final Encryptor encryptor;
     private final Consumer<byte[]> onMessageEncrypted;
 
-    public EncryptorImp(Encryptor encryptor, Consumer<byte[]> onMessageEncrypted) {
+    public EncryptorService(Encryptor encryptor, Consumer<byte[]> onMessageEncrypted) {
         this.encryptor = encryptor;
         this.onMessageEncrypted = onMessageEncrypted;
     }

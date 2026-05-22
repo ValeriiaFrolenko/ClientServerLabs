@@ -5,12 +5,12 @@ import model.Packet;
 
 import java.util.function.Consumer;
 
-public class ProcessorImp implements Processor {
+public class ProcessorService implements Processor {
 
     private final WareHouse wareHouse;
     private final Consumer<Packet> onMessageProcessed;
 
-    public ProcessorImp(WareHouse wareHouse, Consumer<Packet> onMessageProcessed) {
+    public ProcessorService(WareHouse wareHouse, Consumer<Packet> onMessageProcessed) {
         this.wareHouse = wareHouse;
         this.onMessageProcessed = onMessageProcessed;
     }
@@ -26,8 +26,6 @@ public class ProcessorImp implements Processor {
                 case GET_QUANTITY -> processGetQuantity(messageString, packet);
                 case DECREASE_QUANTITY -> processDecreaseQuantity(messageString, packet);
                 case INCREASE_QUANTITY -> processIncreaseQuantity(messageString, packet);
-                case ADD_GROUP -> processAddGroup(messageString, packet);
-                case ADD_PRODUCT_TO_GROUP -> processAddProductToGroup(messageString, packet);
                 case SET_PRICE -> processSetPrice(messageString, packet);
                 default -> throw new IllegalArgumentException("Invalid command integer: " + command);
             }
@@ -54,19 +52,6 @@ public class ProcessorImp implements Processor {
         String productName = parts[0];
         int quantity = Integer.parseInt(parts[1]);
         wareHouse.addStock(productName, quantity);
-        sendResponse(originalPacket, "OK");
-    }
-
-    private void processAddGroup(String messageString, Packet originalPacket) {
-        wareHouse.addGroup(messageString);
-        sendResponse(originalPacket, "OK");
-    }
-
-    private void processAddProductToGroup(String messageString, Packet originalPacket) {
-        String[] parts = messageString.split(":");
-        String groupName = parts[0];
-        String productName = parts[1];
-        wareHouse.addProductToGroup(groupName, productName);
         sendResponse(originalPacket, "OK");
     }
 

@@ -7,11 +7,11 @@ import utils.Crc16;
 
 import java.nio.ByteBuffer;
 
-public class PacketEncryptor implements Encryptor {
+public class PacketEncoder implements Encryptor {
 
     private final byte[] key;
 
-    public PacketEncryptor(byte[] key) {
+    public PacketEncoder(byte[] key) {
         this.key = key;
     }
 

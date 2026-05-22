@@ -1,10 +1,8 @@
+package protocol;
+
 import model.Message;
 import model.Packet;
 import org.junit.jupiter.api.Test;
-import protocol.Decryptor;
-import protocol.Encryptor;
-import protocol.PacketDecryptor;
-import protocol.PacketEncryptor;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -12,8 +10,8 @@ class PacketCodecTest {
 
     Packet packet = createPacket();
     byte[] key = "1234567890abcdef".getBytes();
-    private final PacketDecryptor SUTDecr = new PacketDecryptor(key);
-    private final PacketEncryptor SUTEncr = new PacketEncryptor(key);
+    private final PacketDecoder SUTDecr = new PacketDecoder(key);
+    private final PacketEncoder SUTEncr = new PacketEncoder(key);
 
 
     private Packet createPacket() {

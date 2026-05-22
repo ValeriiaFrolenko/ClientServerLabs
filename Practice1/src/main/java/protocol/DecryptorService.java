@@ -17,7 +17,7 @@ public class DecryptorService implements Decryptor {
     @Override
     public void decrypt(byte[] encryptedPacket) {
         try {
-            Packet packet = packetDecoder.decrypt(encryptedPacket);
+            Packet packet = packetDecoder.decode(encryptedPacket);
             onMessageReceived.accept(packet);
         } catch (Exception e) {
             throw new RuntimeException("Failed to decrypt packet", e);

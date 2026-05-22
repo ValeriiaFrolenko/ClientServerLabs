@@ -7,7 +7,7 @@ import utils.Crc16;
 
 import java.nio.ByteBuffer;
 
-public class PacketEncoder implements Encryptor {
+public class PacketEncoder{
 
     private final byte[] key;
 
@@ -15,7 +15,7 @@ public class PacketEncoder implements Encryptor {
         this.key = key;
     }
 
-    public byte[] encrypt(Packet packet) throws Exception {
+    public byte[] encode(Packet packet) throws Exception {
         if (packet == null) {
             throw new IllegalArgumentException("model.Packet cannot be null");
         }

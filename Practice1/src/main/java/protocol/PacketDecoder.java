@@ -15,7 +15,7 @@ public class PacketDecoder {
         this.key = key;
     }
 
-    public Packet decrypt(byte[] data) throws Exception {
+    public Packet decode(byte[] data) throws Exception {
         if (data == null || data.length < PacketStructure.MIN_PACKET_SIZE) {
             throw new IllegalArgumentException("Invalid packet data");
         }

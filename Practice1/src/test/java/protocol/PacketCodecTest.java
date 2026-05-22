@@ -21,8 +21,8 @@ class PacketCodecTest {
 
     @Test
     void shouldEncodeAndDecodePacketCorrectly() throws Exception {
-        byte[] encoded = SUTEncr.encrypt(packet);
-        Packet decoded = SUTDecr.decrypt(encoded);
+        byte[] encoded = SUTEncr.encode(packet);
+        Packet decoded = SUTDecr.decode(encoded);
 
         assertEquals(packet.getbSrc(), decoded.getbSrc());
         assertEquals(packet.getbPktId(), decoded.getbPktId());

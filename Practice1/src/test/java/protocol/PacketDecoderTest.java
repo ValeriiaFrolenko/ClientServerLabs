@@ -14,13 +14,13 @@ class PacketDecoderTest {
 
     @Test
     void shouldThrowExceptionForNullPacketDecode() {
-        assertThrows(IllegalArgumentException.class, () -> SUT.decrypt(null));
+        assertThrows(IllegalArgumentException.class, () -> SUT.decode(null));
     }
 
     @Test
     void shouldThrowExceptionForInvalidPacketData() {
         byte[] invalidData = new byte[5];
-        assertThrows(IllegalArgumentException.class, () -> SUT.decrypt(invalidData));
+        assertThrows(IllegalArgumentException.class, () -> SUT.decode(invalidData));
     }
 
     @Test
@@ -28,7 +28,7 @@ class PacketDecoderTest {
         byte[] encoded = this.encoded;
         byte wrongByte = 0x00;
         encoded[0] = wrongByte;
-        assertThrows(IllegalArgumentException.class, () -> SUT.decrypt(encoded));
+        assertThrows(IllegalArgumentException.class, () -> SUT.decode(encoded));
     }
 
     @Test
@@ -36,14 +36,14 @@ class PacketDecoderTest {
         byte[] encoded = this.encoded;
         int wrongLength = 9999;
         ByteBuffer.wrap(encoded).position(10).putInt(wrongLength);
-        assertThrows(IllegalArgumentException.class, () -> SUT.decrypt(encoded));
+        assertThrows(IllegalArgumentException.class, () -> SUT.decode(encoded));
     }
 
     @Test
     void shouldThrowExceptionForWrongHeaderCrc() {
         byte[] encoded = this.encoded;
         encoded[PacketStructure.OFFSET_HDR_CRC16] ^= (byte) 0xFF;
-        assertThrows(IllegalArgumentException.class, () -> SUT.decrypt(encoded));
+        assertThrows(IllegalArgumentException.class, () -> SUT.decode(encoded));
     }
 
     @Test
@@ -52,6 +52,6 @@ class PacketDecoderTest {
         int wLen = ByteBuffer.wrap(encoded).getInt(PacketStructure.OFFSET_W_LEN);
         int msgCrcOffset = PacketStructure.OFFSET_MSG + wLen;
         encoded[msgCrcOffset] ^= (byte) 0xFF;
-        assertThrows(IllegalArgumentException.class, () -> SUT.decrypt(encoded));
+        assertThrows(IllegalArgumentException.class, () -> SUT.decode(encoded));
     }
 }

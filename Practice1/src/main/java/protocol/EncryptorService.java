@@ -3,7 +3,7 @@ package protocol;
 import model.Packet;
 import java.util.function.Consumer;
 
-public class EncryptorService {
+public class EncryptorService implements Encryptor {
 
     private final PacketEncoder encoder;
     private final Consumer<byte[]> onMessageEncrypted;
@@ -13,12 +13,15 @@ public class EncryptorService {
         this.onMessageEncrypted = onMessageEncrypted;
     }
 
-    public void encryptMessage(Packet packet) {
+    @Override
+    public byte[] encrypt(Packet packet) {
+        byte[] encodedData;
         try {
-            byte[] encodedData = encoder.encode(packet);
+            encodedData = encoder.encode(packet);
             onMessageEncrypted.accept(encodedData);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        return encodedData;
     }
 }

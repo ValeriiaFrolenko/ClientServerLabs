@@ -34,7 +34,7 @@ public class ServerApplication {
 
         PacketEncoder packetEncoder = new PacketEncoder(key);
         EncryptorService encryptorService = new EncryptorService(packetEncoder, senderConsumer);
-        Consumer<Packet> encryptorConsumer = packet -> encryptorPool.submit(() -> encryptorService.encryptMessage(packet));
+        Consumer<Packet> encryptorConsumer = packet -> encryptorPool.submit(() -> encryptorService.encrypt(packet));
 
         ProcessorService processor = new ProcessorService(wareHouse, encryptorConsumer);
         Consumer<Packet> processorConsumer = packet -> processorPool.submit(() -> processor.process(packet));

@@ -1,5 +1,7 @@
 package network;
 
+import java.io.IOException;
+
 public interface Receiver {
-    void receiveMessage();
+    void receiveMessage() throws IOException;
 }

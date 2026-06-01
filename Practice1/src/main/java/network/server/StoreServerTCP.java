@@ -1,9 +1,13 @@
-package network;
+package network.server;
 
 import core.ProcessorService;
 import core.WareHouse;
 import model.Packet;
 import model.Product;
+import network.ConnectionManager;
+import network.Sender;
+import network.TcpReceiver;
+import network.TcpSender;
 import protocol.DecryptorService;
 import protocol.EncryptorService;
 import protocol.PacketDecoder;
@@ -59,11 +63,7 @@ public class StoreServerTCP {
     }
 
     private void handleClient(Socket clientSocket) {
-        try {
-            TcpReceiver receiver = new TcpReceiver(clientSocket, decryptorConsumer, connectionManager);
-            receiver.run();
-        } catch (IOException e) {
-            System.err.println("Failed to init receiver: " + e.getMessage());
-        }
+        TcpReceiver receiver = new TcpReceiver(clientSocket, decryptorConsumer, connectionManager);
+        receiver.run();
     }
 }

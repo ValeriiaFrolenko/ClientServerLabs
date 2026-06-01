@@ -15,12 +15,14 @@ public class TcpReceiver implements Receiver, Runnable {
     private final Consumer<byte[]> onMessageReceived;
     private final ConnectionManager connectionManager;
     private Byte bSrc = null;
-    DataInputStream in;
+    private DataInputStream in;
 
+    public TcpReceiver(Socket socket, Consumer<byte[]> onMessageReceived) {
+        this(socket, onMessageReceived, null);
+    }
 
-    public TcpReceiver(Socket socket, Consumer<byte[]> onMessageReceived, ConnectionManager connectionManager) throws IOException {
+    public TcpReceiver(Socket socket, Consumer<byte[]> onMessageReceived, ConnectionManager connectionManager) {
         this.socket = socket;
-        this.in = new DataInputStream(socket.getInputStream());
         this.onMessageReceived = onMessageReceived;
         this.connectionManager = connectionManager;
     }
@@ -30,48 +32,50 @@ public class TcpReceiver implements Receiver, Runnable {
         byte[] header = readPacket(PacketStructure.HEADER_SIZE);
         int wLen = ByteBuffer.wrap(header).getInt(PacketStructure.OFFSET_W_LEN);
         int restSize = PacketStructure.MIN_PACKET_SIZE + wLen - PacketStructure.HEADER_SIZE;
-        byte[] rest  = readPacket(restSize);
+        byte[] rest = readPacket(restSize);
         byte[] packet = ByteBuffer.allocate(header.length + rest.length)
                 .put(header)
                 .put(rest)
                 .array();
-        registerSocket(header);
+        registerSource(header);
         onMessageReceived.accept(packet);
     }
 
-    private void registerSocket(byte[] header) {
+    private void registerSource(byte[] header) {
+        if (connectionManager == null) return;
         if (bSrc == null) {
             bSrc = header[PacketStructure.OFFSET_SRC];
             connectionManager.register(bSrc, socket);
         } else if (bSrc != header[PacketStructure.OFFSET_SRC]) {
-            throw new IllegalArgumentException("Source byte mismatch for the same connection.");
+            throw new IllegalArgumentException("Source address mismatch for the same connection.");
         }
     }
 
     private byte[] readPacket(int size) throws IOException {
         byte[] packet = in.readNBytes(size);
         if (packet.length < size) {
-            throw new IOException("Client disconnected abruptly while sending payload.");
+            throw new IOException("Connection closed while reading packet.");
         }
         return packet;
     }
 
     @Override
     public void run() {
-        try (socket) {
+        try (socket; DataInputStream dis = new DataInputStream(socket.getInputStream())) {
+            this.in = dis;
             while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
                 try {
                     receiveMessage();
                 } catch (SocketTimeoutException _) {
                 } catch (IOException | IllegalArgumentException e) {
-                    System.err.println("Receiver thread caught an error: " + e.getMessage());
+                    System.err.println("TcpReceiver error: " + e.getMessage());
                     break;
                 }
             }
         } catch (IOException e) {
-            System.err.println("Failed to release socket resources: " + e.getMessage());
+            System.err.println("TcpReceiver failed to open/close stream: " + e.getMessage());
         } finally {
-            if (bSrc != null) {
+            if (bSrc != null && connectionManager != null) {
                 connectionManager.unregister(bSrc);
             }
         }

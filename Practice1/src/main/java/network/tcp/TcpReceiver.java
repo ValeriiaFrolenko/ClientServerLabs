@@ -1,5 +1,7 @@
-package network;
+package network.tcp;
 
+import network.Receiver;
+import network.tcp.server.ConnectionManager;
 import protocol.PacketStructure;
 
 import java.io.DataInputStream;

@@ -1,4 +1,4 @@
-package network.client;
+package network.tcp.client;
 
 import core.Command;
 import model.Message;

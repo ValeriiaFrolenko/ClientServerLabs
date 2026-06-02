@@ -1,13 +1,12 @@
-package network.server;
+package network.tcp.server;
 
 import core.ProcessorService;
 import core.WareHouse;
 import model.Packet;
 import model.Product;
-import network.ConnectionManager;
 import network.Sender;
-import network.TcpReceiver;
-import network.TcpSender;
+import network.tcp.TcpReceiver;
+import network.tcp.TcpSender;
 import protocol.DecryptorService;
 import protocol.EncryptorService;
 import protocol.PacketDecoder;

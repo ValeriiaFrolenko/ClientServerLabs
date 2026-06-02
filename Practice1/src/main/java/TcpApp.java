@@ -1,7 +1,7 @@
-import network.client.StoreClientTCP;
-import network.server.StoreServerTCP;
+import network.tcp.client.StoreClientTCP;
+import network.tcp.server.StoreServerTCP;
 
-public class Main {
+public class TcpApp {
     public static void main(String[] args) throws InterruptedException {
         Thread serverThread = new Thread(() -> {
             try {

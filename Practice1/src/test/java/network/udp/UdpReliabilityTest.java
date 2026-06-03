@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class UdpReliabilityTest {
@@ -59,13 +60,11 @@ public class UdpReliabilityTest {
 
                     if (dropped < DROP_FIRST_N) {
                         dropped++;
-                        System.out.println("Server dropped packet #" + dropped);
                         continue;
                     }
 
                     receivedCount.incrementAndGet();
                     deliveryLatch.countDown();
-                    System.out.println("Server received packet after " + dropped + " drops");
                 } catch (IOException e) {
                     break;
                 }
@@ -80,10 +79,10 @@ public class UdpReliabilityTest {
         InetSocketAddress serverAddress = new InetSocketAddress("localhost", PORT);
         try (DatagramSocket clientSocket = new DatagramSocket();
              ReliableUdpSender sender = new ReliableUdpSender(clientSocket, serverAddress)) {
+
             sender.sendMessage(encoded);
 
-            boolean delivered = deliveryLatch.await(15, TimeUnit.SECONDS);
-            assertTrue(delivered);
+            assertTrue(deliveryLatch.await(15, TimeUnit.SECONDS));
             assertTrue(receivedCount.get() >= 1);
         }
     }
@@ -101,7 +100,6 @@ public class UdpReliabilityTest {
                     serverSocket.receive(datagram);
                     receivedCount.incrementAndGet();
                     firstDelivery.countDown();
-                    System.out.println("Server received packet, total: " + receivedCount.get());
                 } catch (IOException e) {
                     break;
                 }
@@ -123,19 +121,12 @@ public class UdpReliabilityTest {
 
             sender.sendMessage(encoded);
             firstDelivery.await(5, TimeUnit.SECONDS);
-
             sender.acknowledge(packetId);
+
             int countAfterAck = receivedCount.get();
-
             Thread.sleep(7000);
-            assertEquals(countAfterAck, receivedCount.get(),
-                    "Received count should not increase after acknowledgment");
-        }
-    }
 
-    private void assertEquals(int expected, int actual, String message) {
-        if (expected != actual) {
-            throw new AssertionError(message + " expected: " + expected + " but was: " + actual);
+            assertEquals(countAfterAck, receivedCount.get());
         }
     }
 }

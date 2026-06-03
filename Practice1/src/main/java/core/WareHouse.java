@@ -23,6 +23,14 @@ public class WareHouse {
         return product.getQuantity();
     }
 
+    public double getProductPrice(String name) {
+        Product product = products.get(name);
+        if (product == null) {
+            throw new NoSuchElementException("Product not found: " + name);
+        }
+        return product.getPrice();
+    }
+
     public void addStock(String name, int quantity) {
         products.compute(name, (_, product) -> {
             if (product == null) {

@@ -1,7 +1,7 @@
 package network.tcp;
 
 import network.Receiver;
-import network.tcp.server.ConnectionManager;
+import network.tcp.server.TcpConnectionManager;
 import protocol.PacketStructure;
 
 import java.io.DataInputStream;
@@ -15,7 +15,7 @@ public class TcpReceiver implements Receiver, Runnable {
 
     private final Socket socket;
     private final Consumer<byte[]> onMessageReceived;
-    private final ConnectionManager connectionManager;
+    private final TcpConnectionManager tcpConnectionManager;
     private Byte bSrc = null;
     private DataInputStream in;
 
@@ -23,10 +23,10 @@ public class TcpReceiver implements Receiver, Runnable {
         this(socket, onMessageReceived, null);
     }
 
-    public TcpReceiver(Socket socket, Consumer<byte[]> onMessageReceived, ConnectionManager connectionManager) {
+    public TcpReceiver(Socket socket, Consumer<byte[]> onMessageReceived, TcpConnectionManager tcpConnectionManager) {
         this.socket = socket;
         this.onMessageReceived = onMessageReceived;
-        this.connectionManager = connectionManager;
+        this.tcpConnectionManager = tcpConnectionManager;
     }
 
     @Override
@@ -44,10 +44,10 @@ public class TcpReceiver implements Receiver, Runnable {
     }
 
     private void registerSource(byte[] header) {
-        if (connectionManager == null) return;
+        if (tcpConnectionManager == null) return;
         if (bSrc == null) {
             bSrc = header[PacketStructure.OFFSET_SRC];
-            connectionManager.register(bSrc, socket);
+            tcpConnectionManager.register(bSrc, socket);
         } else if (bSrc != header[PacketStructure.OFFSET_SRC]) {
             throw new IllegalArgumentException("Source address mismatch for the same connection.");
         }
@@ -77,8 +77,8 @@ public class TcpReceiver implements Receiver, Runnable {
         } catch (IOException e) {
             System.err.println("TcpReceiver failed to open/close stream: " + e.getMessage());
         } finally {
-            if (bSrc != null && connectionManager != null) {
-                connectionManager.unregister(bSrc);
+            if (bSrc != null && tcpConnectionManager != null) {
+                tcpConnectionManager.unregister(bSrc);
             }
         }
     }

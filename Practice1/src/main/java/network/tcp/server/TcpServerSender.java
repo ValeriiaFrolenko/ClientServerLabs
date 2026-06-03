@@ -1,23 +1,22 @@
-package network.tcp;
+package network.tcp.server;
 
 import network.Sender;
-import network.tcp.server.ConnectionManager;
 
 import java.io.IOException;
 import java.net.Socket;
 
-public class TcpSender implements Sender {
+public class TcpServerSender implements Sender {
 
-    private final ConnectionManager connectionManager;
+    private final TcpConnectionManager tcpConnectionManager;
 
-    public TcpSender(ConnectionManager connectionManager) {
-        this.connectionManager = connectionManager;
+    public TcpServerSender(TcpConnectionManager tcpConnectionManager) {
+        this.tcpConnectionManager = tcpConnectionManager;
     }
 
     @Override
     public void sendMessage(byte[] packet) {
         byte dst = packet[protocol.PacketStructure.OFFSET_SRC];
-        Socket socket = connectionManager.getSocket(dst);
+        Socket socket = tcpConnectionManager.getSocket(dst);
         if (socket == null) return;
         try {
             socket.getOutputStream().write(packet);

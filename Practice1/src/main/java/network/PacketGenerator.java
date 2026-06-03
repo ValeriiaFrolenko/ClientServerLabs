@@ -1,29 +1,25 @@
-package network.tcp.client;
+package network;
 
 import core.Command;
 import model.Message;
 import model.Packet;
-import protocol.PacketEncoder;
 
 import java.util.Random;
 
 public class PacketGenerator {
 
     private final byte clientId;
-    private final PacketEncoder encoder;
     private final Random random = new Random();
 
-    public PacketGenerator(byte clientId, byte[] key) {
+    public PacketGenerator(byte clientId) {
         this.clientId = clientId;
-        this.encoder = new PacketEncoder(key);
     }
 
-    public byte[] generate() throws Exception {
+    public Packet generate() {
         Command command = randomCommand();
         String payload = buildPayload(command);
         Message message = new Message(command.ordinal(), 42, payload);
-        Packet packet = new Packet(clientId, System.currentTimeMillis(), message);
-        return encoder.encode(packet);
+        return new Packet(clientId, System.currentTimeMillis(), message);
     }
 
     private Command randomCommand() {

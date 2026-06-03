@@ -3,7 +3,7 @@ package network.tcp.server;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ConnectionManager {
+public class TcpConnectionManager {
 
     private final ConcurrentHashMap<Byte, Socket> connections = new ConcurrentHashMap<>();
 

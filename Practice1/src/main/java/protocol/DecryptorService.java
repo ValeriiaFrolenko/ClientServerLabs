@@ -20,7 +20,7 @@ public class DecryptorService implements Decryptor {
             Packet packet = packetDecoder.decode(encryptedPacket);
             onMessageReceived.accept(packet);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to decrypt packet", e);
+            System.err.println("Failed to decrypt packet: " + e.getMessage());
         }
     }
 }

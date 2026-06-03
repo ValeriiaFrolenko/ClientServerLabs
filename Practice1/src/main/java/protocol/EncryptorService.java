@@ -1,6 +1,7 @@
 package protocol;
 
 import model.Packet;
+
 import java.util.function.Consumer;
 
 public class EncryptorService implements Encryptor {
@@ -15,13 +16,13 @@ public class EncryptorService implements Encryptor {
 
     @Override
     public byte[] encrypt(Packet packet) {
-        byte[] encodedData;
         try {
-            encodedData = encoder.encode(packet);
+            byte[] encodedData = encoder.encode(packet);
             onMessageEncrypted.accept(encodedData);
+            return encodedData;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            System.err.println("Failed to encrypt packet: " + e.getMessage());
+            return null;
         }
-        return encodedData;
     }
 }

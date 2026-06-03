@@ -1,8 +1,14 @@
 package network.tcp.client;
 
+import network.PacketGenerator;
+import network.ResponseHandler;
+import network.Sender;
 import network.tcp.TcpReceiver;
 import protocol.DecryptorService;
+import protocol.EncryptorService;
 import protocol.PacketDecoder;
+import protocol.PacketEncoder;
+import model.Packet;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -19,48 +25,70 @@ public class StoreClientTCP {
     private final byte clientId;
     private final byte[] key = "1234567890123456".getBytes();
 
+    private final ExecutorService encryptorPool = Executors.newFixedThreadPool(2);
+    private final ExecutorService senderPool = Executors.newFixedThreadPool(2);
+    private final ExecutorService decryptorPool = Executors.newFixedThreadPool(2);
+    private final ExecutorService responsePool = Executors.newFixedThreadPool(2);
+
     public StoreClientTCP(byte clientId) {
         this.clientId = clientId;
     }
 
     public void start() {
-        while (!Thread.currentThread().isInterrupted()) {
-            try (Socket socket = new Socket(HOST, PORT)) {
-                System.out.println("Connected to server");
-                run(socket);
-            } catch (IOException e) {
-                System.err.println("Server unavailable, retrying in " + RECONNECT_DELAY_MS + "ms");
-                try {
-                    Thread.sleep(RECONNECT_DELAY_MS);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    break;
+        try {
+            while (!Thread.currentThread().isInterrupted()) {
+                try (Socket socket = new Socket(HOST, PORT)) {
+                    System.out.println("Connected to server");
+                    run(socket);
+                } catch (IOException e) {
+                    System.err.println("Server unavailable, retrying in " + RECONNECT_DELAY_MS + "ms");
+                    try {
+                        Thread.sleep(RECONNECT_DELAY_MS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
             }
+        } finally {
+            stop();
         }
     }
 
-    private void run(Socket socket) throws IOException {
+    private void run(Socket socket) {
         PacketDecoder decoder = new PacketDecoder(key);
-        ResponseHandler responseHandler = new ResponseHandler();
-        DecryptorService decryptorService = new DecryptorService(decoder, packet -> responseHandler.handle(packet));
-        Consumer<byte[]> decryptorConsumer = decryptorService::decrypt;
+        PacketEncoder encoder = new PacketEncoder(key);
 
-        PacketGenerator generator = new PacketGenerator(clientId, key);
+        Sender sender = new TcpClientSender(socket);
+        Consumer<byte[]> senderConsumer = data -> senderPool.submit(() -> sender.sendMessage(data));
+
+        EncryptorService encryptorService = new EncryptorService(encoder, senderConsumer);
+        Consumer<Packet> encryptorConsumer = packet -> encryptorPool.submit(() -> encryptorService.encrypt(packet));
+
+        ResponseHandler responseHandler = new ResponseHandler(packet ->
+                responsePool.submit(() ->
+                        System.out.println("Response: " + packet.getbMsq().getMessage())));
+        DecryptorService decryptorService = new DecryptorService(decoder, responseHandler::handle);
+        Consumer<byte[]> decryptorConsumer = data -> decryptorPool.submit(() -> decryptorService.decrypt(data));
+
+        PacketGenerator generator = new PacketGenerator(clientId);
         try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
-            pool.submit(() -> sendLoop(socket, generator));
-            pool.submit(() -> {
-                TcpReceiver receiver = new TcpReceiver(socket, decryptorConsumer);
-                receiver.run();
-            });
+            pool.submit(() -> sendLoop(socket, generator, encryptorConsumer));
+            pool.submit(() -> new TcpReceiver(socket, decryptorConsumer).run());
         }
     }
 
-    private void sendLoop(Socket socket, PacketGenerator generator) {
+    private void stop() {
+        encryptorPool.shutdown();
+        senderPool.shutdown();
+        decryptorPool.shutdown();
+        responsePool.shutdown();
+    }
+
+    private void sendLoop(Socket socket, PacketGenerator generator, Consumer<Packet> encryptorConsumer) {
         while (!socket.isClosed() && !Thread.currentThread().isInterrupted()) {
             try {
-                byte[] packet = generator.generate();
-                socket.getOutputStream().write(packet);
+                encryptorConsumer.accept(generator.generate());
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -72,4 +100,3 @@ public class StoreClientTCP {
         }
     }
 }
-

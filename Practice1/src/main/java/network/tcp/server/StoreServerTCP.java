@@ -1,9 +1,11 @@
 package network.tcp.server;
 
 import core.ProcessorService;
-import core.WareHouse;
+import core.ProductService;
+import database.DatabaseConnection;
+import database.JdbcTemplate;
+import database.ProductRepository;
 import model.Packet;
-import model.Product;
 import network.Sender;
 import network.tcp.TcpReceiver;
 import protocol.DecryptorService;
@@ -34,9 +36,6 @@ public class StoreServerTCP {
     public StoreServerTCP() {
         byte[] key = "1234567890123456".getBytes();
 
-        WareHouse wareHouse = new WareHouse();
-        wareHouse.addProduct(new Product("Apple", 10.0, 100));
-
         Sender sender = new TcpServerSender(tcpConnectionManager);
         Consumer<byte[]> senderConsumer = data -> senderPool.submit(() -> sender.sendMessage(data));
 
@@ -44,12 +43,19 @@ public class StoreServerTCP {
         EncryptorService encryptorService = new EncryptorService(encoder, senderConsumer);
         Consumer<Packet> encryptorConsumer = packet -> encryptorPool.submit(() -> encryptorService.encrypt(packet));
 
-        ProcessorService processor = new ProcessorService(wareHouse, encryptorConsumer);
+        ProcessorService processor = new ProcessorService(getService(), encryptorConsumer);
         Consumer<Packet> processorConsumer = packet -> processorPool.submit(() -> processor.process(packet));
 
         PacketDecoder decoder = new PacketDecoder(key);
         DecryptorService decryptorService = new DecryptorService(decoder, processorConsumer);
         this.decryptorConsumer = data -> decryptorPool.submit(() -> decryptorService.decrypt(data));
+    }
+
+    private ProductService getService() {
+        DatabaseConnection.init();
+        JdbcTemplate jdbc = new JdbcTemplate(DatabaseConnection::getConnection);
+        ProductRepository repository = new ProductRepository(jdbc);
+        return new ProductService(repository);
     }
 
     public void start() {

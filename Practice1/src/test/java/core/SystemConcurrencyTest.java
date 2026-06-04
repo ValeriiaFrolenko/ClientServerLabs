@@ -1,9 +1,10 @@
 package core;
 
+import database.JdbcTemplate;
+import database.ProductRepository;
 import model.Message;
 import model.Packet;
 import model.Product;
-import network.Sender;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,8 @@ import protocol.EncryptorService;
 import protocol.PacketDecoder;
 import protocol.PacketEncoder;
 
+import java.sql.DriverManager;
+import java.sql.Statement;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,14 +27,40 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class SystemConcurrencyTest {
 
     private static final byte[] KEY = "1234567890123456".getBytes();
+    private static final String URL = "jdbc:h2:mem:concurrencydb;DB_CLOSE_DELAY=-1";
+    private static final String USER = "sa";
+    private static final String PASSWORD = "";
 
     private ExecutorService decryptorPool;
     private ExecutorService processorPool;
     private ExecutorService encryptorPool;
     private ExecutorService senderPool;
 
+    private ProductService productService;
+
     @BeforeEach
-    public void setUp() {
+    public void setUp() throws Exception {
+        try (var conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("DROP TABLE IF EXISTS products");
+            stmt.execute("""
+                    CREATE TABLE products (
+                        id       BIGINT AUTO_INCREMENT PRIMARY KEY,
+                        name     VARCHAR(255) NOT NULL,
+                        category VARCHAR(255) NOT NULL,
+                        price    DOUBLE       NOT NULL,
+                        quantity INT          NOT NULL
+                    )
+                    """);
+        }
+
+        // Фабрика — кожен потік отримує своє окреме з'єднання
+        JdbcTemplate jdbc = new JdbcTemplate(
+                () -> DriverManager.getConnection(URL, USER, PASSWORD)
+        );
+        ProductRepository repository = new ProductRepository(jdbc);
+        productService = new ProductService(repository);
+
         decryptorPool = Executors.newFixedThreadPool(2);
         processorPool = Executors.newFixedThreadPool(4);
         encryptorPool = Executors.newFixedThreadPool(3);
@@ -39,24 +68,28 @@ public class SystemConcurrencyTest {
     }
 
     @AfterEach
-    public void tearDown() {
+    public void tearDown() throws Exception {
         decryptorPool.shutdownNow();
         processorPool.shutdownNow();
         encryptorPool.shutdownNow();
         senderPool.shutdownNow();
+
+        try (var conn = DriverManager.getConnection(URL, USER, PASSWORD);
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("DROP TABLE IF EXISTS products");
+        }
     }
 
-    private Consumer<byte[]> buildPipeline(WareHouse wareHouse, CountDownLatch latch) {
+    private Consumer<byte[]> buildPipeline(CountDownLatch latch) {
         PacketEncoder encoder = new PacketEncoder(KEY);
         PacketDecoder decoder = new PacketDecoder(KEY);
 
-        Sender sender = data -> latch.countDown();
-        Consumer<byte[]> senderConsumer = data -> senderPool.submit(() -> sender.sendMessage(data));
+        Consumer<byte[]> senderConsumer = _ -> senderPool.submit(latch::countDown);
 
         EncryptorService encryptorService = new EncryptorService(encoder, senderConsumer);
         Consumer<Packet> encryptorConsumer = packet -> encryptorPool.submit(() -> encryptorService.encrypt(packet));
 
-        ProcessorService processor = new ProcessorService(wareHouse, encryptorConsumer);
+        ProcessorService processor = new ProcessorService(productService, encryptorConsumer);
         Consumer<Packet> processorConsumer = packet -> processorPool.submit(() -> processor.process(packet));
 
         DecryptorService decryptorService = new DecryptorService(decoder, processorConsumer);
@@ -68,10 +101,9 @@ public class SystemConcurrencyTest {
         int numberOfMessages = 100;
         CountDownLatch latch = new CountDownLatch(numberOfMessages);
 
-        WareHouse wareHouse = new WareHouse();
-        wareHouse.addProduct(new Product("Buckwheat", 50.0, 100));
+        productService.create(Product.builder().name("Buckwheat").category("Grains").price(50.0).quantity(100).build());
 
-        Consumer<byte[]> decryptorConsumer = buildPipeline(wareHouse, latch);
+        Consumer<byte[]> decryptorConsumer = buildPipeline(latch);
         PacketEncoder encoder = new PacketEncoder(KEY);
 
         ExecutorService clientPool = Executors.newFixedThreadPool(10);
@@ -89,7 +121,7 @@ public class SystemConcurrencyTest {
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         clientPool.shutdownNow();
-        assertEquals(1100, wareHouse.getProductQuantity("Buckwheat"));
+        assertEquals(1100, productService.getQuantity("Buckwheat"));
     }
 
     @Test
@@ -98,10 +130,9 @@ public class SystemConcurrencyTest {
         int messagesPerClient = 20;
         CountDownLatch latch = new CountDownLatch(clients * messagesPerClient);
 
-        WareHouse wareHouse = new WareHouse();
-        wareHouse.addProduct(new Product("Apple", 10.0, 1000));
+        productService.create(Product.builder().name("Apple").category("Fruit").price(10.0).quantity(1000).build());
 
-        Consumer<byte[]> decryptorConsumer = buildPipeline(wareHouse, latch);
+        Consumer<byte[]> decryptorConsumer = buildPipeline(latch);
         PacketEncoder encoder = new PacketEncoder(KEY);
 
         ExecutorService clientPool = Executors.newFixedThreadPool(clients);
@@ -122,7 +153,7 @@ public class SystemConcurrencyTest {
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         clientPool.shutdownNow();
-        assertEquals(1000, wareHouse.getProductQuantity("Apple"));
+        assertEquals(1000, productService.getQuantity("Apple"));
     }
 
     @Test
@@ -130,10 +161,9 @@ public class SystemConcurrencyTest {
         int operations = 50;
         CountDownLatch latch = new CountDownLatch(operations * 2);
 
-        WareHouse wareHouse = new WareHouse();
-        wareHouse.addProduct(new Product("Apple", 10.0, 100));
+        productService.create(Product.builder().name("Apple").category("Fruit").price(10.0).quantity(100).build());
 
-        Consumer<byte[]> decryptorConsumer = buildPipeline(wareHouse, latch);
+        Consumer<byte[]> decryptorConsumer = buildPipeline(latch);
         PacketEncoder encoder = new PacketEncoder(KEY);
 
         ExecutorService pool = Executors.newFixedThreadPool(10);
@@ -164,7 +194,7 @@ public class SystemConcurrencyTest {
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         pool.shutdownNow();
-        assertEquals(100, wareHouse.getProductQuantity("Apple"));
+        assertEquals(100, productService.getQuantity("Apple"));
     }
 
     @Test
@@ -172,10 +202,9 @@ public class SystemConcurrencyTest {
         int operations = 30;
         CountDownLatch latch = new CountDownLatch(operations);
 
-        WareHouse wareHouse = new WareHouse();
-        wareHouse.addProduct(new Product("Apple", 10.0, 100));
+        productService.create(Product.builder().name("Apple").category("Fruit").price(10.0).quantity(100).build());
 
-        Consumer<byte[]> decryptorConsumer = buildPipeline(wareHouse, latch);
+        Consumer<byte[]> decryptorConsumer = buildPipeline(latch);
         PacketEncoder encoder = new PacketEncoder(KEY);
 
         ExecutorService pool = Executors.newFixedThreadPool(10);
@@ -195,7 +224,7 @@ public class SystemConcurrencyTest {
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         pool.shutdownNow();
 
-        double price = wareHouse.getProductPrice("Apple");
+        double price = productService.getByName("Apple").price();
         assertTrue(price >= 1.0 && price <= 30.0);
     }
 
@@ -204,10 +233,9 @@ public class SystemConcurrencyTest {
         int numberOfMessages = 500;
         CountDownLatch latch = new CountDownLatch(numberOfMessages);
 
-        WareHouse wareHouse = new WareHouse();
-        wareHouse.addProduct(new Product("Apple", 10.0, 0));
+        productService.create(Product.builder().name("Apple").category("Fruit").price(10.0).quantity(0).build());
 
-        Consumer<byte[]> decryptorConsumer = buildPipeline(wareHouse, latch);
+        Consumer<byte[]> decryptorConsumer = buildPipeline(latch);
         PacketEncoder encoder = new PacketEncoder(KEY);
 
         ExecutorService pool = Executors.newFixedThreadPool(20);
@@ -225,6 +253,6 @@ public class SystemConcurrencyTest {
 
         assertTrue(latch.await(15, TimeUnit.SECONDS));
         pool.shutdownNow();
-        assertEquals(500, wareHouse.getProductQuantity("Apple"));
+        assertEquals(500, productService.getQuantity("Apple"));
     }
 }

@@ -1,9 +1,11 @@
 package network.udp.server;
 
 import core.ProcessorService;
-import core.WareHouse;
+import core.ProductService;
+import database.DatabaseConnection;
+import database.JdbcTemplate;
+import database.ProductRepository;
 import model.Packet;
-import model.Product;
 import network.Sender;
 import network.udp.UdpReceiver;
 import protocol.DecryptorService;
@@ -35,9 +37,17 @@ public class StoreServerUDP {
     public StoreServerUDP() {
         byte[] key = "1234567890123456".getBytes();
 
-        WareHouse wareHouse = new WareHouse();
-        wareHouse.addProduct(new Product("Apple", 10.0, 100));
+        Consumer<Packet> encryptorConsumer = getPacketConsumer(key);
 
+        ProcessorService processor = new ProcessorService(getService(), encryptorConsumer);
+        Consumer<Packet> processorConsumer = packet -> processorPool.submit(() -> processor.process(packet));
+
+        PacketDecoder decoder = new PacketDecoder(key);
+        DecryptorService decryptorService = new DecryptorService(decoder, processorConsumer);
+        this.decryptorConsumer = data -> decryptorPool.submit(() -> decryptorService.decrypt(data));
+    }
+
+    private Consumer<Packet> getPacketConsumer(byte[] key) {
         Sender sender = new UdpServerSender(connectionManager, datagram -> senderPool.submit(() -> {
             try {
                 socket.send(datagram);
@@ -51,13 +61,14 @@ public class StoreServerUDP {
         PacketEncoder encoder = new PacketEncoder(key);
         EncryptorService encryptorService = new EncryptorService(encoder, senderConsumer);
         Consumer<Packet> encryptorConsumer = packet -> encryptorPool.submit(() -> encryptorService.encrypt(packet));
+        return encryptorConsumer;
+    }
 
-        ProcessorService processor = new ProcessorService(wareHouse, encryptorConsumer);
-        Consumer<Packet> processorConsumer = packet -> processorPool.submit(() -> processor.process(packet));
-
-        PacketDecoder decoder = new PacketDecoder(key);
-        DecryptorService decryptorService = new DecryptorService(decoder, processorConsumer);
-        this.decryptorConsumer = data -> decryptorPool.submit(() -> decryptorService.decrypt(data));
+    private ProductService getService() {
+        DatabaseConnection.init();
+        JdbcTemplate jdbc = new JdbcTemplate(DatabaseConnection::getConnection);
+        ProductRepository repository = new ProductRepository(jdbc);
+        return new ProductService(repository);
     }
 
     public void start() {

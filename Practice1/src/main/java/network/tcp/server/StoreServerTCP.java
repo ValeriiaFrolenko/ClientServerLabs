@@ -6,6 +6,7 @@ import database.DatabaseConnection;
 import database.JdbcTemplate;
 import database.ProductRepository;
 import model.Packet;
+import model.Product;
 import network.Sender;
 import network.tcp.TcpReceiver;
 import protocol.DecryptorService;
@@ -16,6 +17,7 @@ import protocol.PacketEncoder;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -55,7 +57,13 @@ public class StoreServerTCP {
         DatabaseConnection.init();
         JdbcTemplate jdbc = new JdbcTemplate(DatabaseConnection::getConnection);
         ProductRepository repository = new ProductRepository(jdbc);
-        return new ProductService(repository);
+        ProductService service = new ProductService(repository);
+        try {
+            service.getByName("Apple");
+        } catch (NoSuchElementException e) {
+            service.create(new Product(0, "Apple", "Fruits", 100, 100));
+        }
+        return service;
     }
 
     public void start() {

@@ -12,7 +12,7 @@ import java.util.concurrent.CountDownLatch;
 
 public class HttpApp {
 
-    private static final String BASE_URL = "http://127.0.0.1:8082";
+    private static final String BASE_URL = "http://localhost:8082";
     private static final String TEST_LOGIN = "admin";
     private static final String TEST_PASSWORD = "admin123";
 
@@ -22,7 +22,7 @@ public class HttpApp {
 
         Thread serverThread = new Thread(() -> server.start(ready));
         serverThread.setUncaughtExceptionHandler((t, e) -> {
-            System.err.println("[SERVER THREAD] Uncaught exception:");
+            System.err.println("[SERVER THREAD] Uncaught exception:" + e.getMessage());
         });
         serverThread.start();
 

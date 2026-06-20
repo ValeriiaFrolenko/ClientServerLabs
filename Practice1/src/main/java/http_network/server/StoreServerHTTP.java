@@ -7,9 +7,9 @@ import database.ProductRepository;
 import database.UserRepository;
 import http_core.JwtService;
 import http_handler.AuthHandler;
+import http_handler.JwtAuthenticator;
 import http_handler.ProductHandler;
 import model.Product;
-import network.http.JwtAuthenticator;
 import service.ProductService;
 import service.UserService;
 
@@ -22,20 +22,30 @@ import java.util.concurrent.Executors;
 
 public class StoreServerHTTP {
 
-    private static final int PORT = 8082;
+    private static final int DEFAULT_PORT = 8082;
     private static final String JWT_SECRET = "warehouse-http-secret-key";
 
+    private final int port;
+    private final JdbcTemplate jdbc;
     private final ExecutorService handlerPool = Executors.newFixedThreadPool(8);
     private HttpServer server;
+
+    public StoreServerHTTP() {
+        this.port = DEFAULT_PORT;
+        DatabaseConnection.init();
+        this.jdbc = new JdbcTemplate(DatabaseConnection::getConnection);
+    }
+
+    public StoreServerHTTP(int port, JdbcTemplate jdbc) {
+        this.port = port;
+        this.jdbc = jdbc;
+    }
 
     public void start() {
         start(null);
     }
 
     public void start(CountDownLatch ready) {
-        DatabaseConnection.init();
-        JdbcTemplate jdbc = new JdbcTemplate(DatabaseConnection::getConnection);
-
         ProductRepository productRepository = new ProductRepository(jdbc);
         ProductService productService = new ProductService(productRepository);
         seedDefaultProduct(productService);
@@ -46,9 +56,9 @@ public class StoreServerHTTP {
         JwtService jwtService = new JwtService(JWT_SECRET);
 
         try {
-            server = HttpServer.create(new InetSocketAddress(PORT), 0);
+            server = HttpServer.create(new InetSocketAddress(port), 0);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to start HTTP server on port " + PORT, e);
+            throw new RuntimeException("Failed to start HTTP server on port " + port, e);
         }
 
         server.createContext("/login", new AuthHandler(userService, jwtService));
@@ -60,7 +70,7 @@ public class StoreServerHTTP {
 
         server.setExecutor(handlerPool);
         server.start();
-        System.out.println("HTTP server started on port " + PORT);
+        System.out.println("HTTP server started on port " + port);
 
         if (ready != null) {
             ready.countDown();

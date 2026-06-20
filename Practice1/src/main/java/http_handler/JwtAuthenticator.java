@@ -1,4 +1,4 @@
-package network.http;
+package http_handler;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.sun.net.httpserver.Authenticator;

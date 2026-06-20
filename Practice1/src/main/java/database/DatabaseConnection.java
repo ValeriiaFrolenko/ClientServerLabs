@@ -33,5 +33,18 @@ public class DatabaseConnection {
         } catch (SQLException e) {
             throw new RuntimeException("failed to initialize database", e);
         }
+        String usersSQL = """
+        CREATE TABLE IF NOT EXISTS users (
+            id            BIGINT AUTO_INCREMENT PRIMARY KEY,
+            login         VARCHAR(255) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL
+        )
+        """;
+        try (Connection conn = getConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute(usersSQL);
+        } catch (SQLException e) {
+            throw new RuntimeException("failed to initialize users table", e);
+        }
     }
 }

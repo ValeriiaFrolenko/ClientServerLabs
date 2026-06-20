@@ -1,21 +1,22 @@
 package http_network.server;
 
 import com.sun.net.httpserver.HttpServer;
-import service.ProductService;
-import service.UserService;
 import database.DatabaseConnection;
 import database.JdbcTemplate;
 import database.ProductRepository;
 import database.UserRepository;
 import http_core.JwtService;
 import http_handler.AuthHandler;
-import http_handler.Authenticator;
 import http_handler.ProductHandler;
 import model.Product;
+import network.http.JwtAuthenticator;
+import service.ProductService;
+import service.UserService;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.NoSuchElementException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -28,6 +29,10 @@ public class StoreServerHTTP {
     private HttpServer server;
 
     public void start() {
+        start(null);
+    }
+
+    public void start(CountDownLatch ready) {
         DatabaseConnection.init();
         JdbcTemplate jdbc = new JdbcTemplate(DatabaseConnection::getConnection);
 
@@ -48,11 +53,18 @@ public class StoreServerHTTP {
 
         server.createContext("/login", new AuthHandler(userService, jwtService));
         server.createContext("/register", new AuthHandler(userService, jwtService));
-        server.createContext("/products", new Authenticator(jwtService, new ProductHandler(productService)));
+
+        com.sun.net.httpserver.HttpContext productsContext =
+                server.createContext("/products", new ProductHandler(productService));
+        productsContext.setAuthenticator(new JwtAuthenticator(jwtService));
 
         server.setExecutor(handlerPool);
         server.start();
         System.out.println("HTTP server started on port " + PORT);
+
+        if (ready != null) {
+            ready.countDown();
+        }
     }
 
     public void stop() {

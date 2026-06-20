@@ -58,9 +58,10 @@ public class ProductHandler implements HttpHandler {
             return;
         }
 
-        Map<String, Object> body = HttpResponses.readJsonBody(exchange);
+        Map<String, Object> body;
         Product input;
         try {
+            body = HttpResponses.readJsonBody(exchange);
             input = fromMap(body, 0L);
         } catch (Exception e) {
             HttpResponses.sendError(exchange, 400, "Malformed product: " + e.getMessage());
@@ -83,9 +84,10 @@ public class ProductHandler implements HttpHandler {
             return;
         }
 
-        Map<String, Object> body = HttpResponses.readJsonBody(exchange);
+        Map<String, Object> body;
         Product input;
         try {
+            body = HttpResponses.readJsonBody(exchange);
             input = fromMap(body, id);
         } catch (Exception e) {
             HttpResponses.sendError(exchange, 400, "Malformed product: " + e.getMessage());

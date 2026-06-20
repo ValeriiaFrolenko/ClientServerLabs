@@ -40,24 +40,11 @@ public class AuthHandler implements HttpHandler {
     }
 
     private void handleLogin(HttpExchange exchange) throws IOException {
-        Map<String, Object> request;
-        String login;
-        String password;
-        try {
-            request = HttpResponses.readJsonBody(exchange);
-            login = (String) request.get("login");
-            password = (String) request.get("password");
-            if (login == null || password == null) {
-                HttpResponses.sendError(exchange, 400, "Fields 'login' and 'password' are required");
-                return;
-            }
-        } catch (Exception e) {
-            HttpResponses.sendError(exchange, 400, "Malformed JSON body");
-            return;
-        }
+        String[] credentials = parseCredentials(exchange);
+        if (credentials == null) return;
 
         try {
-            User user = userService.authenticate(login, password);
+            User user = userService.authenticate(credentials[0], credentials[1]);
             String token = jwtService.generateToken(user.login());
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("token", token);
@@ -68,30 +55,33 @@ public class AuthHandler implements HttpHandler {
     }
 
     private void handleRegister(HttpExchange exchange) throws IOException {
-        Map<String, Object> request;
-        String login;
-        String password;
-        try {
-            request = HttpResponses.readJsonBody(exchange);
-            login = (String) request.get("login");
-            password = (String) request.get("password");
-            if (login == null || password == null) {
-                HttpResponses.sendError(exchange, 400, "Fields 'login' and 'password' are required");
-                return;
-            }
-        } catch (Exception e) {
-            HttpResponses.sendError(exchange, 400, "Malformed JSON body");
-            return;
-        }
+        String[] credentials = parseCredentials(exchange);
+        if (credentials == null) return;
 
         try {
-            User created = userService.register(login, password);
+            User created = userService.register(credentials[0], credentials[1]);
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("id", created.id());
             body.put("login", created.login());
             HttpResponses.sendJson(exchange, 201, body);
         } catch (IllegalStateException e) {
             HttpResponses.sendError(exchange, 409, e.getMessage());
+        }
+    }
+
+    private String[] parseCredentials(HttpExchange exchange) throws IOException {
+        try {
+            Map<String, Object> body = HttpResponses.readJsonBody(exchange);
+            String login = (String) body.get("login");
+            String password = (String) body.get("password");
+            if (login == null || password == null) {
+                HttpResponses.sendError(exchange, 400, "Fields 'login' and 'password' are required");
+                return null;
+            }
+            return new String[]{login, password};
+        } catch (Exception e) {
+            HttpResponses.sendError(exchange, 400, "Malformed JSON body");
+            return null;
         }
     }
 }

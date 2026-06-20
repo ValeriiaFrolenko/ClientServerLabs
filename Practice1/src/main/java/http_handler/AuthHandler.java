@@ -2,7 +2,7 @@ package http_handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import core.UserService;
+import service.UserService;
 import model.User;
 import http_core.HttpResponses;
 import http_core.JwtService;

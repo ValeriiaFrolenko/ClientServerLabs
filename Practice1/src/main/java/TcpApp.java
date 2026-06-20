@@ -1,5 +1,5 @@
-import network.tcp.client.StoreClientTCP;
-import network.tcp.server.StoreServerTCP;
+import tcp_udp_network.tcp.client.StoreClientTCP;
+import tcp_udp_network.tcp.server.StoreServerTCP;
 
 public class TcpApp {
     public static void main(String[] args) throws InterruptedException {

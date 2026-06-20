@@ -1,6 +1,6 @@
 
-import network.udp.client.StoreClientUDP;
-import network.udp.server.StoreServerUDP;
+import tcp_udp_network.udp.client.StoreClientUDP;
+import tcp_udp_network.udp.server.StoreServerUDP;
 
 public class UdpApp {
     public static void main(String[] args) throws InterruptedException {

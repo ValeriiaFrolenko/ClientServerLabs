@@ -2,7 +2,7 @@ package http_handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import core.ProductService;
+import service.ProductService;
 import database.JdbcTemplate;
 import model.Product;
 import http_core.HttpResponses;
